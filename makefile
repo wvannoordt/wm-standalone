@@ -1,3 +1,5 @@
+target := wmsolve
+
 ifndef HYWALL
 $(error "Cannot find environment variable HYWALL")
 endif
@@ -6,11 +8,16 @@ ifndef PTL
 $(error "Cannot find environment variable PTL")
 endif
 
-main:
-	mpicxx -I${HYWALL}/include -I${PTL}/include main.cc -o program -L${HYWALL}/lib -lHyWall -L${PTL}/lib -lPTL
+main: setup
+	mpicxx -I${HYWALL}/include -I${PTL}/include main.cc -o ${target} -L${HYWALL}/lib -lHyWall -L${PTL}/lib -lPTL
+	cp -t bin ${target}
+
+setup:
+	mkdir -p bin
 
 run: main
-	./program
+	./${target}
 
 clean:
-	rm -f program
+	rm -f ${target}
+	rm -rf bin

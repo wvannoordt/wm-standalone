@@ -64,7 +64,7 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 	input["InputData"]["x"].MapTo(&in_data.x)             = new PTL::PTLDouble(0.0,      "X-coordinate of sampling location");
 	input["InputData"]["y"].MapTo(&in_data.y)             = new PTL::PTLDouble(0.0,      "Y-coordinate of sampling location");
 	input["InputData"]["z"].MapTo(&in_data.z)             = new PTL::PTLDouble(0.0,      "Z-coordinate of sampling location");
-	input["InputData"]["rho"].MapTo(&in_data.rho)         = new PTL::PTLDouble(0.01,     "Density at sampling location");
+	input["InputData"]["rho"].MapTo(&in_data.rho)         = new PTL::PTLDouble(1.17683,  "Density at sampling location");
 	input["InputData"]["mu"].MapTo(&in_data.mu)           = new PTL::PTLDouble(1e-5,     "Viscosity at sampling location");
 	input["InputData"]["P"].MapTo(&in_data.p)             = new PTL::PTLDouble(101325.0, "Pressure at sampling location");
 	input["InputData"]["U"].MapTo(&in_data.u)             = new PTL::PTLDouble(69.54,    "U-velocity at sampling location");
