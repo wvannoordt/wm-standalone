@@ -38,7 +38,7 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 	input["WallModel"]["wallTemperature"].MapTo(&settings.wallTemperature) = new PTL::PTLDouble(100, "Wall Temperature");
 	input["WallModel"]["adiabaticWall"].MapTo(&settings.adiabaticWall)     = new PTL::PTLBoolean(true, "Adiabatic wall");
 	input["WallModel"]["fluidCp"].MapTo(&settings.fluidCp)                 = new PTL::PTLDouble(1005.0, "Specific heat");
-	input["WallModel"]["turbPradntl"].MapTo(&settings.turbPradntl)         = new PTL::PTLDouble(0.9, "Turbulent Prandtl");
+	input["WallModel"]["turbPradntl"].MapTo(&settings.turbPradntl)         = new PTL::PTLDouble(0.72, "Turbulent Prandtl");
 	input["WallModel"]["fluidPrandtl"].MapTo(&settings.fluidPrandtl)       = new PTL::PTLDouble(0.9, "Laminar Prandtl");
 	input["WallModel"]["vanDriestAPlus"].MapTo(&settings.vanDriestAPlus)   = new PTL::PTLDouble(17.0, "van Driest Constant");
 	input["WallModel"]["gasConstant"].MapTo(&settings.gasConstant)         = new PTL::PTLDouble(287.0, "Gas constant");
