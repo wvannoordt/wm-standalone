@@ -1,6 +1,29 @@
 #include "HyWall.h"
 #include "PTL.h"
 
+std::string cleandata(std::vector<std::string>& args)
+{
+	std::string output;
+	bool foundnum = false;
+	std::string content = args[0];
+	std::string acceptables = "1234567890";
+	for (int i = 0; i < content.length(); i++)
+	{
+		foundnum = foundnum || (acceptables.find(content[i]) != std::string::npos);
+		if (foundnum) output += content[i];
+	}
+	return output;
+}
+
+std::string suth(std::vector<std::string>& args)
+{
+	double tin = PTL::BuiltIns::AssertConvertDouble(args[0]);
+	const double tref = 110.4;
+	const double muref = 1.45151376745308e-06;
+	double result = muref*pow(tin,1.5)/(tin+tref);
+	return std::to_string(result);
+}
+
 struct input_data_t
 {
 	double dist, x, y, z, rho, mu, p, u, v, w, T, mu_t, mom_rhs, dp_dx;
@@ -14,18 +37,23 @@ struct output_data_t
 bool streq(const std::string& s1, const std::string& s2) {return s1.compare(s2)==0;}
 void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings, input_data_t& in_data, bool& ran_init)
 {
+	PTL::AddUserDefinedFunction("cleandata", cleandata);
+	PTL::AddUserDefinedFunction("suth", suth);
 	PTL::PropertyTree input;
 	ran_init = false;
 	bool failed = false;
 	bool is_init = false;
+	std::string failed_message;
 	try
 	{
 		input.Read(filename);
 	}
-	catch (std::exception e)
+	catch (PTL::PTLException e)
 	{
 		failed = true;
 		is_init = filename == "--init";
+		failed_message = e.what();
+		std::cout << "FAILURE MESSAGE:\n" << failed_message << std::endl;
 	}
 	
 	settings.enableWallModel = true;
@@ -158,7 +186,17 @@ int main(int argc, char** argv)
 	HyWall::Allocate();
 	HyWall::Solve();
 	
-	std::cout << "Finished Solve:\n >> tau:  " << output_data.tau << "\n >> qw:   " << output_data.qw << std::endl;
+	std::cout << "Finished solve.\n";
+	std::cout << "==== INPUTS  ====\n";
+	std::cout << " >> dist: " << input_data.dist << "\n";
+	std::cout << " >> rho:  " << input_data.rho  << "\n";
+	std::cout << " >> mu:   " << input_data.mu   << "\n";
+	std::cout << " >> p:    " << input_data.p    << "\n";
+	std::cout << " >> u:    " << input_data.u    << "\n";
+	std::cout << " >> T:    " << input_data.T    << "\n";
+	std::cout << "==== OUTPUTS ====\n";
+	std::cout << " >> tau: " << output_data.tau << "\n";
+	std::cout << " >> qw:  " << output_data.qw  << "\n";
 	
 	HyWall::InitProbeIndex();
 	int u_prb, T_prb, mu_t_prb, y_prb, rho_prb, mu_prb;
