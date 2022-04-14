@@ -76,23 +76,23 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 	input["InputData"]["dp_dx"].MapTo(&in_data.dp_dx)     = new PTL::PTLDouble(0.0,      "Pressure gradient at sampling location");
 	
 	if (!failed) input.StrictParse();
-	     if (streq(mom_eq_str, "allmaras")) settings.momentumEquationType = HyCore::momentum::allmaras;
-	else if (streq(mom_eq_str, "ODE"))      settings.momentumEquationType = HyCore::momentum::ODE;
+	     if (streq(mom_eq_str, "allmaras")) {settings.momentumEquationType = HyCore::momentum::allmaras;}
+	else if (streq(mom_eq_str, "ODE"))      {settings.momentumEquationType = HyCore::momentum::ODE;}
 	else if (!failed) {std::cout << "Invalid value for momentum equation" << std::endl; abort();}
 
-	     if (streq(trb_eq_str, "linear"))    settings.turbulenceEquationType = HyCore::turbulence::linear;
-	else if (streq(trb_eq_str, "ODE"))       settings.turbulenceEquationType = HyCore::turbulence::ODE;
-	else if (streq(trb_eq_str, "vanDriest")) settings.turbulenceEquationType = HyCore::turbulence::vanDriest;
+	     if (streq(trb_eq_str, "linear"))    {settings.turbulenceEquationType = HyCore::turbulence::linear;}
+	else if (streq(trb_eq_str, "ODE"))       {settings.turbulenceEquationType = HyCore::turbulence::ODE;}
+	else if (streq(trb_eq_str, "vanDriest")) {settings.turbulenceEquationType = HyCore::turbulence::vanDriest;}
 	else if (!failed) {std::cout << "Invalid value for turbulence equation" << std::endl; abort();}
 
-	     if (streq(eng_eq_str, "croccoBusemann")) settings.energyEquationType = HyCore::energy::croccoBusemann;
-	else if (streq(eng_eq_str, "ODE"))            settings.energyEquationType = HyCore::energy::ODE;
-	else if (streq(eng_eq_str, "linear"))         settings.energyEquationType = HyCore::energy::linear;
+	     if (streq(eng_eq_str, "croccoBusemann")) {settings.energyEquationType = HyCore::energy::croccoBusemann;}
+	else if (streq(eng_eq_str, "ODE"))            {settings.energyEquationType = HyCore::energy::ODE; }
+	else if (streq(eng_eq_str, "linear"))         {settings.energyEquationType = HyCore::energy::linear;}
 	else if (!failed) {std::cout << "Invalid value for energy equation" << std::endl; abort();}
 
-	     if (streq(visc_law_str, "constant"))   settings.energyEquationType = HyCore::visclaw::constant;
-	else if (streq(visc_law_str, "sutherland")) settings.energyEquationType = HyCore::visclaw::sutherland;
-	else if (streq(visc_law_str, "PowerLaw"))   settings.energyEquationType = HyCore::visclaw::PowerLaw;
+	     if (streq(visc_law_str, "constant"))   {settings.viscousLaw = HyCore::visclaw::constant;}
+	else if (streq(visc_law_str, "sutherland")) {settings.viscousLaw = HyCore::visclaw::sutherland;}
+	else if (streq(visc_law_str, "PowerLaw"))   {settings.viscousLaw = HyCore::visclaw::PowerLaw;}
 	else if (!failed) {std::cout << "Invalid value for energy equation" << std::endl; abort();}
 	else if (is_init)
 	{
@@ -115,6 +115,8 @@ int main(int argc, char** argv)
 	MPI_Init(&argc, &argv);
 	bool was_init = false;
 	input_data_t input_data;
+	HyWall::Initialize(MPI_COMM_WORLD, 4);
+	
 	ReadInput(filename, HyWall::settings, input_data, was_init);
 	
 	
@@ -128,9 +130,7 @@ int main(int argc, char** argv)
 		std::cout << "Rho: " << input_data.rho << " (found), " << input_data.p/(input_data.T*HyWall::settings.gasConstant) << " (expected)" << std::endl;
 		std::cout << "==============================================" << std::endl;
 	}
-	
 	if (was_init) return 0;
-	HyWall::Initialize(MPI_COMM_WORLD, 4);
 	HyWall::SetDomainSize(1);
 	HyWall::DefineVariables();
 	std::vector<double> ff_in(6);
