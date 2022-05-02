@@ -52,25 +52,28 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 	{
 		failed = true;
 		is_init = filename == "--init";
-		failed_message = e.what();
-		std::cout << "FAILURE MESSAGE:\n" << failed_message << std::endl;
+		if (!is_init)
+		{
+			failed_message = e.what();
+			std::cout << "FAILURE MESSAGE:\n" << failed_message << std::endl;
+		}
 	}
 	
 	settings.enableWallModel = true;
 	settings.readRestart = false;
 	input["WallModel"]["rayDim"].MapTo(&settings.rayDim)                   = new PTL::PTLInteger(30, "number of ray points");
 	settings.asyncSolve = false;
-	input["WallModel"]["verboseLevel"].MapTo(&settings.verboseLevel)       = new PTL::PTLInteger(1, "debug output level");
-	input["WallModel"]["maxIterations"].MapTo(&settings.maxIterations)     = new PTL::PTLInteger(100, "Max. iterations");
-	input["WallModel"]["wallSpacing"].MapTo(&settings.wallSpacing)         = new PTL::PTLDouble(1e-6, "Max. iterations");
-	input["WallModel"]["wallTemperature"].MapTo(&settings.wallTemperature) = new PTL::PTLDouble(100, "Wall Temperature");
-	input["WallModel"]["adiabaticWall"].MapTo(&settings.adiabaticWall)     = new PTL::PTLBoolean(true, "Adiabatic wall");
-	input["WallModel"]["fluidCp"].MapTo(&settings.fluidCp)                 = new PTL::PTLDouble(1005.0, "Specific heat");
-	input["WallModel"]["turbPradntl"].MapTo(&settings.turbPradntl)         = new PTL::PTLDouble(0.72, "Turbulent Prandtl");
-	input["WallModel"]["fluidPrandtl"].MapTo(&settings.fluidPrandtl)       = new PTL::PTLDouble(0.9, "Laminar Prandtl");
-	input["WallModel"]["vanDriestAPlus"].MapTo(&settings.vanDriestAPlus)   = new PTL::PTLDouble(17.0, "van Driest Constant");
-	input["WallModel"]["gasConstant"].MapTo(&settings.gasConstant)         = new PTL::PTLDouble(287.0, "Gas constant");
-	settings.enableTransitionSensor = false;
+	input["WallModel"]["verboseLevel"].MapTo(&settings.verboseLevel)          = new PTL::PTLInteger(1, "debug output level");
+	input["WallModel"]["maxIterations"].MapTo(&settings.maxIterations)        = new PTL::PTLInteger(100, "Max. iterations");
+	input["WallModel"]["wallSpacing"].MapTo(&settings.wallSpacing)            = new PTL::PTLDouble(1e-6, "Max. iterations");
+	input["WallModel"]["wallTemperature"].MapTo(&settings.wallTemperature)    = new PTL::PTLDouble(100, "Wall Temperature");
+	input["WallModel"]["adiabaticWall"].MapTo(&settings.adiabaticWall)        = new PTL::PTLBoolean(true, "Adiabatic wall");
+	input["WallModel"]["fluidCp"].MapTo(&settings.fluidCp)                    = new PTL::PTLDouble(1005.0, "Specific heat");
+	input["WallModel"]["turbPradntl"].MapTo(&settings.turbPradntl)            = new PTL::PTLDouble(0.72, "Turbulent Prandtl");
+	input["WallModel"]["fluidPrandtl"].MapTo(&settings.fluidPrandtl)          = new PTL::PTLDouble(0.9, "Laminar Prandtl");
+	input["WallModel"]["vanDriestAPlus"].MapTo(&settings.vanDriestAPlus)      = new PTL::PTLDouble(17.0, "van Driest Constant");
+	input["WallModel"]["gasConstant"].MapTo(&settings.gasConstant)            = new PTL::PTLDouble(287.0, "Gas constant");
+	input["WallModel"]["enableTransitionSensor"].MapTo(&settings.enableTransitionSensor) = new PTL::PTLBoolean(false, "Enable Transition Sensor");
 	
 	std::string mom_eq_str, trb_eq_str, eng_eq_str;
 	input["WallModel"]["momentumEquationType"].MapTo(&mom_eq_str)          = new PTL::PTLString("ODE", "Momentum equation type");
@@ -128,6 +131,7 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 		std::cout << "Initializing input file..." << std::endl;
 		input.CreateDefaultValuesFile("input.ptl");
 		std::cout << "See \"input.ptl\"" << std::endl;
+		exit(0);
 	}
 	else
 	{
@@ -177,6 +181,13 @@ int main(int argc, char** argv)
 	HyWall::PassVariable("in:mu_lam",      &input_data.mu);
 	HyWall::PassVariable("in:momRHS",      &input_data.mom_rhs);
 	HyWall::PassVariable("in:dpdx",        &input_data.dp_dx);
+	double dummy = 1.0;
+	if (HyWall::settings.enableTransitionSensor)
+	{
+		HyWall::SetTimeStep(1.0);
+		HyWall::PassVariable("aux:strain_rate",    &dummy);
+		HyWall::PassVariable("aux:sensor_preMult", &dummy);
+	}
 	
 	output_data_t output_data;
 	HyWall::PassVariable("out:vorticity",    &output_data.vort);
