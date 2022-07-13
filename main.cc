@@ -1,6 +1,27 @@
 #include "HyWall.h"
 #include "PTL.h"
 
+std::vector<std::string> Split(const std::string& str, char c)
+{
+	std::vector<std::string> output;
+	std::string elem = "";
+	for (int i = 0; i < str.length(); i++)
+	{
+		char cur = str[i];
+		if (cur==c)
+		{
+			output.push_back(elem);
+			elem = "";
+		}
+		else
+		{
+			elem += cur;
+		}
+	}
+	output.push_back(elem);
+	return output;
+}
+
 std::string cleandata(std::vector<std::string>& args)
 {
 	std::string output;
@@ -13,6 +34,19 @@ std::string cleandata(std::vector<std::string>& args)
 		if (foundnum) output += content[i];
 	}
 	return output;
+}
+
+std::string specialfread(std::vector<std::string>& args)
+{
+	int col_num = 0;
+	std::istringstream iss(args[2]);
+	iss >> col_num;
+	std::vector<std::string> args2;
+	args2.push_back(args[0]);
+	args2.push_back(args[1]);
+	std::string line = PTL::BuiltIns::PTLFunc_fread(args2);
+	auto v = Split(line, ',');
+	return v[col_num];
 }
 
 std::string suth(std::vector<std::string>& args)
@@ -35,9 +69,10 @@ struct output_data_t
 };
 
 bool streq(const std::string& s1, const std::string& s2) {return s1.compare(s2)==0;}
-void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings, input_data_t& in_data, bool& ran_init)
+void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings, input_data_t& in_data, bool& ran_init, std::string& out_file)
 {
 	PTL::AddUserDefinedFunction("cleandata", cleandata);
+	PTL::AddUserDefinedFunction("specialfread", specialfread);
 	PTL::AddUserDefinedFunction("suth", suth);
 	PTL::PropertyTree input;
 	ran_init = false;
@@ -68,6 +103,7 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 	input["WallModel"]["wallSpacing"].MapTo(&settings.wallSpacing)            = new PTL::PTLDouble(1e-6, "Max. iterations");
 	input["WallModel"]["wallTemperature"].MapTo(&settings.wallTemperature)    = new PTL::PTLDouble(100, "Wall Temperature");
 	input["WallModel"]["adiabaticWall"].MapTo(&settings.adiabaticWall)        = new PTL::PTLBoolean(true, "Adiabatic wall");
+	input["WallModel"]["variablePrandtlT"].MapTo(&settings.variablePrandtlT)  = new PTL::PTLBoolean(false, "Variable turbulent prandtl number");
 	input["WallModel"]["fluidCp"].MapTo(&settings.fluidCp)                    = new PTL::PTLDouble(1005.0, "Specific heat");
 	input["WallModel"]["turbPradntl"].MapTo(&settings.turbPradntl)            = new PTL::PTLDouble(0.72, "Turbulent Prandtl");
 	input["WallModel"]["fluidPrandtl"].MapTo(&settings.fluidPrandtl)          = new PTL::PTLDouble(0.9, "Laminar Prandtl");
@@ -106,6 +142,11 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 	input["InputData"]["mom_rhs"].MapTo(&in_data.mom_rhs) = new PTL::PTLDouble(0.0,      "Momentum RHS at sampling location");
 	input["InputData"]["dp_dx"].MapTo(&in_data.dp_dx)     = new PTL::PTLDouble(0.0,      "Pressure gradient at sampling location");
 	
+	std::string yscale_str;
+	input["WallModel"]["yScale"].MapTo(&yscale_str) = new PTL::PTLString("trettelLarsson", "y-coordinate scaling");
+	
+	input["Output"]["filename"].MapTo(&out_file)    = new PTL::PTLString("solution.csv", "Output filename");
+	
 	if (!failed) input.StrictParse();
 	     if (streq(mom_eq_str, "allmaras")) {settings.momentumEquationType = HyCore::momentum::allmaras;}
 	else if (streq(mom_eq_str, "ODE"))      {settings.momentumEquationType = HyCore::momentum::ODE;}
@@ -121,10 +162,16 @@ void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings
 	else if (streq(eng_eq_str, "linear"))         {settings.energyEquationType = HyCore::energy::linear;}
 	else if (!failed) {std::cout << "Invalid value for energy equation" << std::endl; abort();}
 
+		if  (streq(yscale_str, "trettelLarsson")) {settings.yscaleType = HyCore::yscale::trettelLarsson;}
+	else if (streq(yscale_str, "yPlus"))          {settings.yscaleType = HyCore::yscale::yPlus;}
+	else if (streq(yscale_str, "mixed"))          {settings.yscaleType = HyCore::yscale::mixed;}
+	else if (!failed) {std::cout << "Invalid value for y-coordinate transform" << std::endl; abort();}
+
 	     if (streq(visc_law_str, "constant"))   {settings.viscousLaw = HyCore::visclaw::constant;}
 	else if (streq(visc_law_str, "sutherland")) {settings.viscousLaw = HyCore::visclaw::sutherland;}
 	else if (streq(visc_law_str, "PowerLaw"))   {settings.viscousLaw = HyCore::visclaw::PowerLaw;}
 	else if (!failed) {std::cout << "Invalid value for energy equation" << std::endl; abort();}
+	
 	else if (is_init)
 	{
 		ran_init = true;
@@ -149,7 +196,8 @@ int main(int argc, char** argv)
 	input_data_t input_data;
 	HyWall::Initialize(MPI_COMM_WORLD, 4);
 	
-	ReadInput(filename, HyWall::settings, input_data, was_init);
+	std::string out_filename;
+	ReadInput(filename, HyWall::settings, input_data, was_init, out_filename);
 	
 	
 	if (std::abs(input_data.rho - input_data.p/(input_data.T*HyWall::settings.gasConstant))>1e-5)
@@ -232,7 +280,7 @@ int main(int argc, char** argv)
 	HyWall::ProbeSolution(mu_prb,   0, &v_mu  [0]);
 	HyWall::ProbeSolution(mu_t_prb, 0, &v_mu_t[0]);
 	
-	std::ofstream out_file("solution.csv");
+	std::ofstream out_file(out_filename);
 	for (int i = 0; i < v_y.size(); i++)
 	{
 		out_file << v_y[i] << ", " << v_u[i] << ", " << v_T[i] << ", " << v_rho[i] << ", " << v_mu[i] << ", " << v_mu_t[i] << "\n";
