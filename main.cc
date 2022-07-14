@@ -69,12 +69,13 @@ struct output_data_t
 };
 
 bool streq(const std::string& s1, const std::string& s2) {return s1.compare(s2)==0;}
-void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings, input_data_t& in_data, bool& ran_init, std::string& out_file)
+void ReadInput(const std::string& filename, decltype(HyWall::settings)& settings, input_data_t& in_data, bool& ran_init, std::string& out_file, int argc, char** argv)
 {
 	PTL::AddUserDefinedFunction("cleandata", cleandata);
 	PTL::AddUserDefinedFunction("specialfread", specialfread);
 	PTL::AddUserDefinedFunction("suth", suth);
 	PTL::PropertyTree input;
+	PTL::Interactive i(argc, argv, &input);
 	ran_init = false;
 	bool failed = false;
 	bool is_init = false;
@@ -197,7 +198,7 @@ int main(int argc, char** argv)
 	HyWall::Initialize(MPI_COMM_WORLD, 4);
 	
 	std::string out_filename;
-	ReadInput(filename, HyWall::settings, input_data, was_init, out_filename);
+	ReadInput(filename, HyWall::settings, input_data, was_init, out_filename, argc, argv);
 	
 	
 	if (std::abs(input_data.rho - input_data.p/(input_data.T*HyWall::settings.gasConstant))>1e-5)
