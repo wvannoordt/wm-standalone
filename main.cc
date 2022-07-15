@@ -280,11 +280,16 @@ int main(int argc, char** argv)
 	HyWall::ProbeSolution(rho_prb,  0, &v_rho [0]);
 	HyWall::ProbeSolution(mu_prb,   0, &v_mu  [0]);
 	HyWall::ProbeSolution(mu_t_prb, 0, &v_mu_t[0]);
-	
+	std::vector<double> prt;
+	prt.resize(HyWall::settings.rayDim, 0.0);
+	for (int i = 0; i < prt.size(); i++)
+	{
+		prt[i] = HyCore::GetTurbPrandtl(0, i, HyWall::settings.variablePrandtlT, HyWall::settings.yscaleType);
+	}
 	std::ofstream out_file(out_filename);
 	for (int i = 0; i < v_y.size(); i++)
 	{
-		out_file << v_y[i] << ", " << v_u[i] << ", " << v_T[i] << ", " << v_rho[i] << ", " << v_mu[i] << ", " << v_mu_t[i] << "\n";
+		out_file << v_y[i] << ", " << v_u[i] << ", " << v_T[i] << ", " << v_rho[i] << ", " << v_mu[i] << ", " << v_mu_t[i] << ", " << prt[i] << "\n";
 	}
 	
 	HyWall::Finalize();
