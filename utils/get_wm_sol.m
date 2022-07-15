@@ -1,0 +1,22 @@
+function [wmsolout] = get_wm_sol(filename)
+  wmsolout.filename = filename;
+  data = csvread(filename);
+  prandtl = 0.72;
+  wmsolout.y    = data(:,1);
+  wmsolout.u    = data(:,2);
+  wmsolout.T    = data(:,3);
+  wmsolout.rho  = data(:,4);
+  wmsolout.mu   = data(:,5);
+  wmsolout.mu_t = data(:,6);
+  wmsolout.Pr_t = data(:,7);
+  wmsolout.tau  = wmsolout.mu(1)*((wmsolout.u(2)-wmsolout.u(1))/(wmsolout.y(2)-wmsolout.y(1)));
+  wmsolout.qw   =-wmsolout.mu(1)/prandtl*((wmsolout.T(2)-wmsolout.T(1))/(wmsolout.y(2)-wmsolout.y(1)));
+  wmsolout.yplus= wmsolout.rho(1)*wmsolout.y*sqrt(wmsolout.tau/wmsolout.rho(1))/wmsolout.mu(1);
+  wmsolout.ystar= wmsolout.rho.*wmsolout.y.*sqrt(wmsolout.tau./wmsolout.rho)./wmsolout.mu;
+  wmsolout.dudy = 0.0*wmsolout.u;
+  wmsolout.dudy(end)     = (wmsolout.u(end)   - wmsolout.u(end-1))  /(wmsolout.y(end)   - wmsolout.y(end-1));
+  wmsolout.dudy(1:end-1) = (wmsolout.u(2:end) - wmsolout.u(1:end-1))/(wmsolout.y(2:end) - wmsolout.y(1:end-1));
+  wmsolout.dTdy = 0.0*wmsolout.T;
+  wmsolout.dTdy(end)     = (wmsolout.T(end)   - wmsolout.T(end-1))  /(wmsolout.y(end)   - wmsolout.y(end-1));
+  wmsolout.dTdy(1:end-1) = (wmsolout.T(2:end) - wmsolout.T(1:end-1))/(wmsolout.y(2:end) - wmsolout.y(1:end-1));
+end
